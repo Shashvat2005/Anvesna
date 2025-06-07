@@ -1,7 +1,9 @@
 // src/components/auth/LoginForm.tsx
 "use client";
 
-import { useAuth } from '@/hooks/useAuth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,29 +11,67 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader2 } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
+  email: z.string().email({ message: "Invalid email" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
-  const { signInWithEmail, signInWithGoogle, loading } = useAuth();
+
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    await signInWithEmail(data.email, data.password);
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      router.push("/")
+    } catch (err: any) {
+      alert(err.message);
+    }
+    setLoading(false);
   };
 
   const handleGoogleSignIn = async () => {
-    await signInWithGoogle();
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Reference to Firestore user document
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      // Only add to Firestore if this is a new user
+      if (!userDocSnap.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          createdAt: new Date(),
+        });
+      }
+      router.push('/');
+      //console.log("Google login successful & user added to Firestore");
+    } catch (error: any) {
+      console.error("Google Sign-In Error:", error.message);
+      alert(error.message);
+    }
   };
 
   return (
+
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>

@@ -1,33 +1,88 @@
 
 // src/app/page.tsx
-"use client";
+'use client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Logo } from "@/components/layout/Logo";
 import { CheckCircle, Users, MessageCircle, TrendingUp, BookOpen, ShieldAlert } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+
+
 
 export default function LandingPage() {
+  const router = useRouter();
+
+  const [message, setMessage] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/hello/")  // Django endpoint
+      .then((res) => res.json())
+      .then((data) => setMessage(data.message))
+      .catch((err) => console.error("Backend fetch error:", err));
+    
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+  
+  const handleLogout = async () => {
+    try {
+      // inside handleLogout:
+      await signOut(auth);
+      setUser(null);
+      router.push("/login");
+      
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-secondary/20 to-secondary/40">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
         <Logo iconSize={32} textSize="text-3xl" />
         <nav className="space-x-2 sm:space-x-4">
-          <Button variant="ghost" asChild>
-            <Link href="/login">Log In</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/signup">Sign Up</Link>
-          </Button>
+          {user ? (
+            <Button onClick={handleLogout}>
+              Logout
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" asChild>
+                <Link href="/login">Log In</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/signup">Sign Up</Link>
+              </Button>
+            </>
+          )}
         </nav>
       </header>
 
       <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8">
         <section className="text-center py-20 sm:py-28">
-          <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground mb-8">
-            Welcome to <span className="bg-gradient-to-r from-primary via-accent to-primary/80 bg-clip-text text-transparent">Anvesna</span>
-          </h1>
+
+          {user ? (
+            <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground mb-8">
+              Welcome to <span className="bg-gradient-to-r from-primary via-accent to-primary/80 bg-clip-text text-transparent">Anvesna, {user?.displayName}</span>
+            </h1>
+          ) : (
+            <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground mb-8">
+              Welcome to <span className="bg-gradient-to-r from-primary via-accent to-primary/80 bg-clip-text text-transparent">Anvesna</span>
+            </h1>
+          )}
+        
+          <p className="text-md sm:text-lg text-primary font-semibold mt-6">
+            {message}
+          </p>
+
           <p className="text-lg sm:text-xl text-foreground/75 max-w-2xl mx-auto mb-12">
             Your companion for mental wellness. Find support, track your mood, and discover resources to help you on your journey.
           </p>
