@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 50% 97%; /* Very light warm beige/off-white */
+    --foreground: 30 10% 25%; /* Dark, warm brown/gray for text */
+
+    --card: 30 30% 98%; /* Very light warm off-white for cards */
+    --card-foreground: 30 10% 25%; /* Dark text on cards */
+
+    --popover: 30 30% 98%; /* Popover same as card */
+    --popover-foreground: 30 10% 25%; /* Popover text same as card */
+
+    --primary: 30 80% 68%; /* Soft Warm Orange */
+    --primary-foreground: 30 30% 15%; /* Dark warm brown for text on primary */
+
+    --secondary: 30 70% 85%; /* Lighter, softer orange */
+    --secondary-foreground: 30 30% 30%; /* Darker text on secondary */
+
+    --muted: 30 40% 92%; /* Very light desaturated orange/warm gray */
+    --muted-foreground: 30 20% 50%; /* Softer text color */
+
+    --accent: 35 75% 75%; /* Soft yellow-orange/peach accent */
+    --accent-foreground: 35 40% 20%; /* Dark text on accent */
+
+    --destructive: 0 70% 60%; /* Warmer, softer red */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
+
+    --border: 30 25% 88%; /* Light warm gray/desaturated orange border */
+    --input: 30 25% 88%; /* Input border same as border */
+    --ring: 30 80% 68%; /* Primary orange for focus rings */
+
+    --radius: 0.5rem;
+
+    /* Sidebar specific variables */
+    --sidebar-background: 30 30% 92%; /* Very light desaturated warm beige */
+    --sidebar-foreground: 30 10% 25%; /* Dark text for sidebar */
+    --sidebar-primary: 30 80% 68%; /* Primary orange for active sidebar items */
+    --sidebar-primary-foreground: 30 30% 15%; /* Dark text on sidebar primary */
+    --sidebar-accent: 30 40% 95%; /* Even lighter beige for hover on sidebar items */
+    --sidebar-accent-foreground: 30 30% 15%; /* Dark text on sidebar accent */
+    --sidebar-border: 30 20% 85%; /* Light warm border for sidebar */
+    --sidebar-ring: 30 80% 68%; /* Primary orange for sidebar focus rings */
+
+    --chart-1: 30 80% 68%; /* primary */
+    --chart-2: 35 75% 75%; /* accent */
+    --chart-3: 30 70% 75%; /* another shade of orange */
+    --chart-4: 30 60% 80%; /* lighter orange */
+    --chart-5: 20 60% 80%; /* more reddish orange */
+  }
+
+  .dark {
+    --background: 30 10% 10%; /* Very dark warm brown */
+    --foreground: 30 30% 90%; /* Light warm beige for text */
+
+    --card: 30 10% 12%; /* Slightly lighter than background for cards */
+    --card-foreground: 30 30% 90%; /* Light text on cards */
+
+    --popover: 30 10% 12%; /* Popover same as card */
+    --popover-foreground: 30 30% 90%; /* Popover text same as card */
+
+    --primary: 30 80% 65%; /* Brighter orange for dark mode */
+    --primary-foreground: 30 50% 10%; /* Very dark for text on primary */
+
+    --secondary: 30 60% 25%; /* Darker, desaturated orange */
+    --secondary-foreground: 30 30% 85%; /* Light text on secondary */
+
+    --muted: 30 20% 18%; /* Dark warm gray */
+    --muted-foreground: 30 20% 60%; /* Medium warm gray text */
+
+    --accent: 35 70% 60%; /* Brighter accent for dark mode */
+    --accent-foreground: 35 40% 10%; /* Dark text on accent */
+
+    --destructive: 0 70% 55%; /* Slightly brighter red for dark mode */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
+
+    --border: 30 15% 25%; /* Dark warm gray border */
+    --input: 30 15% 25%; /* Input border same as border */
+    --ring: 30 80% 65%; /* Primary orange for focus rings */
+    
+    /* Sidebar specific variables */
+    --sidebar-background: 30 10% 14%; /* Slightly lighter than main dark background */
+    --sidebar-foreground: 30 30% 90%; /* Light text for sidebar */
+    --sidebar-primary: 30 80% 65%; /* Primary orange for active sidebar items */
+    --sidebar-primary-foreground: 30 50% 10%; /* Dark text on sidebar primary */
+    --sidebar-accent: 30 15% 20%; /* Slightly lighter warm gray for hover */
+    --sidebar-accent-foreground: 30 50% 10%; /* Dark text on sidebar accent */
+    --sidebar-border: 30 10% 22%; /* Dark warm border for sidebar */
+    --sidebar-ring: 30 80% 65%; /* Primary orange for sidebar focus rings */
+
+    --chart-1: 30 80% 65%; /* primary */
+    --chart-2: 35 70% 60%; /* accent */
+    --chart-3: 30 70% 60%; 
+    --chart-4: 30 60% 65%;
+    --chart-5: 20 60% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
