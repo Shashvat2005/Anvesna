@@ -1,4 +1,3 @@
-
 // src/app/self-growth-support/page.tsx
 "use client";
 
@@ -7,13 +6,13 @@ import AppShell from "@/components/layout/AppShell";
 import PostList from "@/components/community/PostList";
 import ResourceCard from "@/components/resources/ResourceCard";
 import { Button } from "@/components/ui/button";
-import { db } from "@/lib/firebase";
+import { realtimeDb } from "@/lib/firebase";
+import { ref, get } from "firebase/database";
 import { useEffect, useState } from "react";
 import { Loader2, Sunrise, Users, BookOpen, Edit3, ShieldAlert } from "lucide-react";
 import type { Resource } from "@/components/resources/ResourceCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
-// Removed firestore imports, db is now mock
 
 const SELF_GROWTH_COMMUNITY_ID = "self-growth";
 
@@ -25,21 +24,36 @@ export default function SelfGrowthSupportPage() {
     const fetchSelfGrowthResources = async () => {
       setIsLoadingResources(true);
       try {
-        // Using mock db
-        const resourcesSnapshot = await db.collection('resources').get();
-        const allResources = resourcesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Resource);
+        const resourcesRef = ref(realtimeDb, "resources");
+        const snapshot = await get(resourcesRef);
 
-        const selfGrowthRelatedTopics = ['self-growth', 'mindfulness', 'motivation', 'personal development', 'well-being', 'habits'];
-        const fetchedResources = allResources.filter(res =>
-          res.topic && selfGrowthRelatedTopics.some(topic => res.topic.toLowerCase().includes(topic))
-        );
-        setResources(fetchedResources);
+        if (snapshot.exists()) {
+          const allResources = snapshot.val();
+          const selfGrowthRelatedTopics = [
+            "self-growth",
+            "mindfulness",
+            "motivation",
+            "personal development",
+            "well-being",
+            "habits",
+          ];
+          const fetchedResources = Object.keys(allResources)
+            .map((key) => ({ id: key, ...allResources[key] }))
+            .filter((res) =>
+              res.topic && selfGrowthRelatedTopics.some((topic) => res.topic.toLowerCase().includes(topic))
+            );
+
+          setResources(fetchedResources);
+        } else {
+          console.log("No resources found in Realtime Database.");
+        }
       } catch (error) {
         console.error("Error fetching self-growth resources:", error);
       } finally {
         setIsLoadingResources(false);
       }
     };
+
     fetchSelfGrowthResources();
   }, []);
 
@@ -49,15 +63,24 @@ export default function SelfGrowthSupportPage() {
         <div className="space-y-8">
           <section className="relative bg-card p-6 sm:p-10 rounded-xl shadow-lg overflow-hidden">
             <div className="absolute inset-0 opacity-10">
-              <Image src="https://placehold.co/1200x300.png" data-ai-hint="growth journey" alt="Abstract background" layout="fill" objectFit="cover" />
+              <Image
+                src="https://placehold.co/1200x300.png"
+                data-ai-hint="growth journey"
+                alt="Abstract background"
+                layout="fill"
+                objectFit="cover"
+              />
             </div>
             <div className="relative z-10">
               <div className="flex items-center mb-4">
                 <Sunrise className="h-10 w-10 text-primary mr-3" />
-                <h1 className="font-headline text-3xl sm:text-4xl font-semibold text-foreground">Self-Growth &amp; Development</h1>
+                <h1 className="font-headline text-3xl sm:text-4xl font-semibold text-foreground">
+                  Self-Growth &amp; Development
+                </h1>
               </div>
               <p className="text-muted-foreground text-lg">
-                Embark on your personal development journey. Find inspiration, tools, and a community to support your growth.
+                Embark on your personal development journey. Find inspiration, tools, and a community to support your
+                growth.
               </p>
             </div>
           </section>
@@ -68,7 +91,9 @@ export default function SelfGrowthSupportPage() {
                 <Users className="h-7 w-7 text-primary" />
                 <CardTitle className="font-headline text-2xl">Growth Community</CardTitle>
               </div>
-              <CardDescription>Connect with others passionate about self-improvement, share insights, and achieve your goals together.</CardDescription>
+              <CardDescription>
+                Connect with others passionate about self-improvement, share insights, and achieve your goals together.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full sm:w-auto mb-6">
@@ -84,7 +109,9 @@ export default function SelfGrowthSupportPage() {
                 <BookOpen className="h-7 w-7 text-primary" />
                 <CardTitle className="font-headline text-2xl">Growth Resources</CardTitle>
               </div>
-              <CardDescription>Explore resources on mindfulness, productivity, habit building, and more to fuel your personal growth.</CardDescription>
+              <CardDescription>
+                Explore resources on mindfulness, productivity, habit building, and more to fuel your personal growth.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoadingResources ? (
@@ -98,19 +125,25 @@ export default function SelfGrowthSupportPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-6">No specific resources found for self-growth. General resources are available in the main library.</p>
+                <p className="text-muted-foreground text-center py-6">
+                  No specific resources found for self-growth. General resources are available in the main library.
+                </p>
               )}
             </CardContent>
           </Card>
 
           <Card className="border-destructive/50 bg-destructive/5 text-destructive-foreground shadow-lg">
             <CardHeader>
-              <CardTitle className="text-destructive flex items-center gap-2"><ShieldAlert className="h-5 w-5"/>Important Note</CardTitle>
+              <CardTitle className="text-destructive flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5" />
+                Important Note
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm">
                 Anvesna is a support tool and not a replacement for professional medical advice or emergency services.
-                If you are in crisis or need immediate help, please contact emergency services or a qualified healthcare professional.
+                If you are in crisis or need immediate help, please contact emergency services or a qualified healthcare
+                professional.
               </p>
             </CardContent>
           </Card>

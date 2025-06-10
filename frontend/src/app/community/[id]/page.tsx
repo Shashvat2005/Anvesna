@@ -1,4 +1,3 @@
-
 // src/app/community/[id]/page.tsx
 "use client";
 
@@ -6,17 +5,17 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import AppShell from "@/components/layout/AppShell";
 import PostList from "@/components/community/PostList";
 import { Button } from "@/components/ui/button";
-import { db } from "@/lib/firebase"; 
+import { realtimeDb } from "@/lib/firebase";
+import { ref, get, query, orderByChild, equalTo } from "firebase/database";
 import { useEffect, useState } from "react";
 import { Loader2, MessageSquare, Edit3, ArrowLeft, Users, ShieldAlert, CloudRain, HeartHandshake, Sunrise } from "lucide-react";
 import Link from "next/link";
-import type { Community } from "@/components/community/CommunityCard"; 
+import type { Community } from "@/components/community/CommunityCard";
 import type { Post } from "@/components/community/PostCard";
 import Image from "next/image";
-import { useParams } from 'next/navigation';
+import { useParams } from "next/navigation";
 import CreatePostForm from "@/components/community/CreatePostForm";
 import { useToast } from "@/hooks/use-toast";
-// Removed specific firestore imports, using mock db methods
 
 const iconMap: { [key: string]: React.ElementType } = {
   ShieldAlert,
@@ -34,48 +33,53 @@ export default function IndividualCommunityPage() {
   const [community, setCommunity] = useState<Community | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const [posts, setPosts] = useState<Post[]>([]); // initialPosts will be handled by PostList for mock
+  const [posts, setPosts] = useState<Post[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (communityId) {
-      const fetchCommunityData = async () => {
-        setIsLoading(true);
-        try {
-          // Fetch community details from mock
-          const communityDocRef = db.collection("communities").doc(communityId);
-          const communitySnap = await communityDocRef.get();
-          if (communitySnap.exists()) {
-            setCommunity({ id: communitySnap.id, ...communitySnap.data() } as Community);
-          } else {
-            setCommunity(null);
-            toast({ title: "Not Found", description: "Community data could not be loaded.", variant: "destructive" });
-          }
+    const fetchCommunityData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch community details
+        const communityRef = ref(realtimeDb, `communities/${communityId}`);
+        const communitySnapshot = await get(communityRef);
 
-          // Fetch initial posts - PostList will also fetch, but this can prime it or be removed if PostList handles initial load fine
-          // For mock, PostList is self-sufficient, so this explicit post fetch can be simplified or removed
-          // const postsQuery = db.collection("posts").where("communityId", "==", communityId).orderBy("createdAt", "desc");
-          // const postsSnapshot = await postsQuery.get();
-          // const communityPostsData = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: new Date(doc.data().createdAt).toISOString() } as Post));
-          // setPosts(communityPostsData);
-
-
-        } catch (error) {
-          console.error("Error fetching community data:", error);
-          toast({ title: "Error", description: "Could not load community data.", variant: "destructive" });
-        } finally {
-          setIsLoading(false);
+        if (communitySnapshot.exists()) {
+          setCommunity({ id: communityId, ...communitySnapshot.val() } as Community);
+        } else {
+          setCommunity(null);
+          toast({ title: "Not Found", description: "Community data could not be loaded.", variant: "destructive" });
         }
-      };
+
+        // Fetch posts for the community
+        const postsQuery = query(ref(realtimeDb, "posts"), orderByChild("communityId"), equalTo(communityId));
+        const postsSnapshot = await get(postsQuery);
+
+        if (postsSnapshot.exists()) {
+          const fetchedPosts = Object.keys(postsSnapshot.val()).map((key) => ({
+            id: key,
+            ...postsSnapshot.val()[key],
+          })) as Post[];
+          setPosts(fetchedPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        } else {
+          console.log("No posts found for this community.");
+        }
+      } catch (error) {
+        console.error("Error fetching community data:", error);
+        toast({ title: "Error", description: "Could not load community data.", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (communityId) {
       fetchCommunityData();
     }
   }, [communityId, toast]);
 
   const handlePostCreated = (newPost: Post) => {
-    // This will add to the local state, PostList might refetch or also update if prop changes
-     setPosts(prevPosts => [newPost, ...prevPosts].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    setPosts((prevPosts) => [newPost, ...prevPosts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
-
 
   if (isLoading && !community) {
     return (
@@ -104,17 +108,17 @@ export default function IndividualCommunityPage() {
       </AuthGuard>
     );
   }
-  
+
   const IconComponent = community.icon && iconMap[community.icon] ? iconMap[community.icon] : iconMap.Default;
-  
+
   const getImageHint = () => {
     if (community.icon && iconMap[community.icon]) {
-      const iconName = community.icon.toLowerCase().replace(/([A-Z])/g, ' $1').trim().split(' ')[0];
+      const iconName = community.icon.toLowerCase().replace(/([A-Z])/g, " $1").trim().split(" ")[0];
       return `${iconName} banner`;
     }
-    const communityNamePart = community.name.toLowerCase().split('&')[0].trim().split(' ')[0];
+    const communityNamePart = community.name.toLowerCase().split("&")[0].trim().split(" ")[0];
     return `${communityNamePart} banner`;
-  }
+  };
 
   return (
     <AuthGuard>
@@ -122,24 +126,24 @@ export default function IndividualCommunityPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <Button variant="outline" size="icon" asChild>
-                <Link href="/community">
-                    <ArrowLeft className="h-5 w-5" />
-                    <span className="sr-only">Back to communities</span>
-                </Link>
+              <Link href="/community">
+                <ArrowLeft className="h-5 w-5" />
+                <span className="sr-only">Back to communities</span>
+              </Link>
             </Button>
           </div>
 
           <section className="bg-card p-6 sm:p-8 rounded-xl shadow-lg">
-             <div className="flex items-start sm:items-center gap-4 mb-4 flex-col sm:flex-row">
-                <div className="p-3 rounded-lg bg-primary/10 text-primary shrink-0">
-                    {IconComponent && <IconComponent size={32} />}
-                </div>
-                <div>
-                    <h1 className="font-headline text-2xl sm:text-3xl font-semibold text-foreground">{community.name}</h1>
-                    <p className="text-muted-foreground mt-1">{community.description}</p>
-                </div>
+            <div className="flex items-start sm:items-center gap-4 mb-4 flex-col sm:flex-row">
+              <div className="p-3 rounded-lg bg-primary/10 text-primary shrink-0">
+                {IconComponent && <IconComponent size={32} />}
+              </div>
+              <div>
+                <h1 className="font-headline text-2xl sm:text-3xl font-semibold text-foreground">{community.name}</h1>
+                <p className="text-muted-foreground mt-1">{community.description}</p>
+              </div>
             </div>
-            <Image 
+            <Image
               src="https://placehold.co/1200x200.png"
               alt={`${community.name} banner`}
               width={1200}
@@ -151,16 +155,15 @@ export default function IndividualCommunityPage() {
               <Edit3 className="mr-2 h-4 w-4" /> Create New Post
             </Button>
           </section>
-          
-          {/* PostList will handle its own loading and fetching from mock based on communityId */}
-          {/* Pass the locally managed posts if you want optimistic updates from CreatePostForm */}
+
           <PostList communityId={communityId} initialPosts={posts} />
+
         </div>
-        <CreatePostForm 
-          isOpen={isCreatePostOpen} 
-          onOpenChange={setIsCreatePostOpen} 
-          communityId={communityId} 
-          onPostCreated={handlePostCreated} 
+        <CreatePostForm
+          isOpen={isCreatePostOpen}
+          onOpenChange={setIsCreatePostOpen}
+          communityId={communityId}
+          onPostCreated={handlePostCreated}
         />
       </AppShell>
     </AuthGuard>
