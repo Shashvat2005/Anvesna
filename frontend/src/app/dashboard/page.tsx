@@ -1,20 +1,20 @@
 // src/app/dashboard/page.tsx
 "use client";
 
-import AuthGuard from "@/components/auth/AuthGuard";
 import AppShell from "@/components/layout/AppShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, HeartPulse, Users, MessageCircle, BookOpen } from "lucide-react";
 import Image from "next/image";
+import { User } from "firebase/auth";
+import { useState } from "react";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+
+  const [user, setUser] = useState<User | null>(null);
 
   return (
-    <AuthGuard>
       <AppShell>
         <div className="space-y-8">
           <section className="bg-card p-6 sm:p-8 rounded-xl shadow-lg">
@@ -76,7 +76,6 @@ export default function DashboardPage() {
 
         </div>
       </AppShell>
-    </AuthGuard>
   );
 }
 

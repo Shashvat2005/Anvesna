@@ -2,15 +2,13 @@
 // src/app/mood-tracking/page.tsx
 "use client";
 
-import AuthGuard from "@/components/auth/AuthGuard";
 import AppShell from "@/components/layout/AppShell";
 import MoodSelector from "@/components/mood/MoodSelector";
 import JournalInput from "@/components/mood/JournalInput";
 import MoodCalendarView from "@/components/mood/MoodCalendarView";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/lib/firebase";
+import { User } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save } from "lucide-react";
@@ -19,7 +17,9 @@ import type { MoodEntry } from "@/components/mood/MoodCalendarView";
 // Mock db handles these concepts internally.
 
 export default function MoodTrackingPage() {
-  const { user } = useAuth();
+
+  const [user, setUser] = useState<User | null>(null);
+
   const { toast } = useToast();
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [journalText, setJournalText] = useState<string>("");
@@ -27,80 +27,82 @@ export default function MoodTrackingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      const fetchHistory = async () => {
-        setIsLoadingHistory(true);
-        try {
-          // Using mock db
-          const moodEntriesQuery = db.collection('moodEntries')
-            .where('userId', '==', user.uid)
-            .orderBy('date', 'desc') // Mock orderBy might be simplified
-            .limit(30); // Mock limit might be simplified
+  // useEffect(() => {
+  //   if (user) {
+  //     const fetchHistory = async () => {
+  //       setIsLoadingHistory(true);
+  //       try {
+  //         // Using mock db
+  //         const moodEntriesQuery = db.collection('moodEntries')
+  //           .where('userId', '==', user.uid)
+  //           .orderBy('date', 'desc') // Mock orderBy might be simplified
+  //           .limit(30); // Mock limit might be simplified
           
-          const querySnapshot = await moodEntriesQuery.get();
+  //         const querySnapshot = await moodEntriesQuery.get();
 
-          const history = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return { 
-              id: doc.id, 
-              ...data,
-              // Mock data already provides date as ISO string or JS Date, ensure consistency
-              date: typeof data.date === 'string' ? data.date : new Date(data.date).toISOString() 
-            } as MoodEntry;
-          });
-          setMoodHistory(history.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); // Ensure sort
-        } catch (error) {
-          console.error("Error fetching mood history:", error);
-          toast({ title: "Error", description: "Could not load mood history.", variant: "destructive" });
-        } finally {
-          setIsLoadingHistory(false);
-        }
-      };
-      fetchHistory();
-    }
-  }, [user, toast]);
+  //         const history = querySnapshot.docs.map(doc => {
+  //           const data = doc.data();
+  //           return { 
+  //             id: doc.id, 
+  //             ...data,
+  //             // Mock data already provides date as ISO string or JS Date, ensure consistency
+  //             date: typeof data.date === 'string' ? data.date : new Date(data.date).toISOString() 
+  //           } as MoodEntry;
+  //         });
+  //         setMoodHistory(history.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); // Ensure sort
+  //       } catch (error) {
+  //         console.error("Error fetching mood history:", error);
+  //         toast({ title: "Error", description: "Could not load mood history.", variant: "destructive" });
+  //       } finally {
+  //         setIsLoadingHistory(false);
+  //       }
+  //     };
+  //     fetchHistory();
+  //   }
+  // }, [user, toast]);
 
-  const handleSaveMood = async () => {
-    if (!user) {
-      toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
-      return;
-    }
-    if (!selectedMood) {
-      toast({ title: "Hold on!", description: "Please select a mood first.", variant: "default" });
-      return;
-    }
+  // const handleSaveMood = async () => {
+  //   if (!user) {
+  //     toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+  //     return;
+  //   }
+  //   if (!selectedMood) {
+  //     toast({ title: "Hold on!", description: "Please select a mood first.", variant: "default" });
+  //     return;
+  //   }
 
-    setIsSaving(true);
-    const newEntryData = { // Omit id, mock addDoc will generate it
-      userId: user.uid,
-      mood: selectedMood,
-      journal: journalText,
-      date: new Date().toISOString(), // Store as ISO string for mock
-    };
+  //   setIsSaving(true);
+  //   const newEntryData = { // Omit id, mock addDoc will generate it
+  //     userId: user.uid,
+  //     mood: selectedMood,
+  //     journal: journalText,
+  //     date: new Date().toISOString(), // Store as ISO string for mock
+  //   };
 
-    try {
-      // Using mock db's addDoc
-      const docRef = await db.collection('moodEntries').addDoc(newEntryData);
+  //   try {
+  //     // Using mock db's addDoc
+  //     const docRef = await db.collection('moodEntries').addDoc(newEntryData);
       
-      const addedEntry: MoodEntry = {
-        id: docRef.id, // id from mock addDoc
-        ...newEntryData,
-      };
-      setMoodHistory(prev => [addedEntry, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      toast({ title: "Mood Saved", description: "Your mood entry has been recorded." });
-      setSelectedMood(null);
-      setJournalText("");
-    } catch (error) {
-      console.error("Error saving mood:", error);
-      toast({ title: "Error", description: "Could not save mood entry.", variant: "destructive" });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  //     const addedEntry: MoodEntry = {
+  //       id: docRef.id, // id from mock addDoc
+  //       ...newEntryData,
+  //     };
+  //     setMoodHistory(prev => [addedEntry, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  //     toast({ title: "Mood Saved", description: "Your mood entry has been recorded." });
+  //     setSelectedMood(null);
+  //     setJournalText("");
+  //   } catch (error) {
+  //     console.error("Error saving mood:", error);
+  //     toast({ title: "Error", description: "Could not save mood entry.", variant: "destructive" });
+  //   } finally {
+  //     setIsSaving(false);
+  //   }
+  // };
+
+
+    const handleSaveMood = async () => {}
 
   return (
-    <AuthGuard>
       <AppShell>
         <div className="space-y-8">
           <Card className="shadow-lg">
@@ -135,6 +137,5 @@ export default function MoodTrackingPage() {
           </Card>
         </div>
       </AppShell>
-    </AuthGuard>
   );
 }

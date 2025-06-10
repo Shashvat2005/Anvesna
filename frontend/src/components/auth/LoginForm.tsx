@@ -35,7 +35,7 @@ export default function LoginForm() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      router.push("/")
+      router.push("/dashboard")
     } catch (err: any) {
       alert(err.message);
     }
@@ -62,7 +62,7 @@ export default function LoginForm() {
           createdAt: new Date(),
         });
       }
-      router.push('/');
+      router.push('/dashboard');
       //console.log("Google login successful & user added to Firestore");
     } catch (error: any) {
       console.error("Google Sign-In Error:", error.message);

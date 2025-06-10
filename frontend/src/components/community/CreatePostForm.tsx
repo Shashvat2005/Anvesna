@@ -12,9 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Loader2, PlusCircle } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import type { Post } from './PostCard';
+import { User } from "firebase/auth";
 import { db } from '@/lib/firebase'; // Using mock db
 // No serverTimestamp from firestore needed for mock
 
@@ -33,7 +33,7 @@ interface CreatePostFormProps {
 }
 
 export default function CreatePostForm({ isOpen, onOpenChange, communityId, onPostCreated }: CreatePostFormProps) {
-  const { user } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,47 +41,52 @@ export default function CreatePostForm({ isOpen, onOpenChange, communityId, onPo
     resolver: zodResolver(postSchema),
   });
 
-  const onSubmit: SubmitHandler<PostFormInputs> = async (data) => {
-    if (!user) {
-      toast({ title: "Authentication Error", description: "You must be logged in to create a post.", variant: "destructive" });
-      return;
-    }
-    setIsSubmitting(true);
+  // const onSubmit: SubmitHandler<PostFormInputs> = async (data) => {
+  //   if (!user) {
+  //     toast({ title: "Authentication Error", description: "You must be logged in to create a post.", variant: "destructive" });
+  //     return;
+  //   }
+  //   setIsSubmitting(true);
 
-    const postCreationTime = new Date(); 
+  //   const postCreationTime = new Date(); 
 
-    const newPostDataForMock = {
-      communityId,
-      userId: user.uid,
-      userName: user.displayName || "Anonymous User",
-      userAvatar: user.photoURL || `https://placehold.co/40x40.png?text=${(user.displayName || "A").charAt(0)}`,
-      title: data.title,
-      content: data.content,
-      createdAt: postCreationTime.toISOString(), // Store as ISO string for mock
-      reactions: 0,
-      commentsCount: 0,
-    };
+  //   const newPostDataForMock = {
+  //     communityId,
+  //     userId: user.uid,
+  //     userName: user.displayName || "Anonymous User",
+  //     userAvatar: user.photoURL || `https://placehold.co/40x40.png?text=${(user.displayName || "A").charAt(0)}`,
+  //     title: data.title,
+  //     content: data.content,
+  //     createdAt: postCreationTime.toISOString(), // Store as ISO string for mock
+  //     reactions: 0,
+  //     commentsCount: 0,
+  //   };
 
-    try {
-      // Using mock db's addDoc
-      const docRef = await db.collection('posts').addDoc(newPostDataForMock);
+  //   try {
+  //     // Using mock db's addDoc
+  //     const docRef = await db.collection('posts').addDoc(newPostDataForMock);
       
-      const createdPostForUI: Post = {
-        ...newPostDataForMock,
-        id: docRef.id, // id from mock addDoc response
-      };
+  //     const createdPostForUI: Post = {
+  //       ...newPostDataForMock,
+  //       id: docRef.id, // id from mock addDoc response
+  //     };
       
-      onPostCreated(createdPostForUI);
-      toast({ title: "Post Created!", description: "Your post has been successfully shared." });
-      reset();
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Error creating post:", error);
-      toast({ title: "Error", description: "Could not create post. Please try again.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  //     onPostCreated(createdPostForUI);
+  //     toast({ title: "Post Created!", description: "Your post has been successfully shared." });
+  //     reset();
+  //     onOpenChange(false);
+  //   } catch (error) {
+  //     console.error("Error creating post:", error);
+  //     toast({ title: "Error", description: "Could not create post. Please try again.", variant: "destructive" });
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
+
+
+  const onSubmit: SubmitHandler<PostFormInputs> = async (data) => {}
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
