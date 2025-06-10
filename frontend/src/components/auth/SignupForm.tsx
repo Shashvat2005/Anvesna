@@ -1,19 +1,16 @@
 // src/components/auth/SignupForm.tsx
 "use client";
 
-import { createUserWithEmailAndPassword, updateProfile} from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useForm, type SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Loader2 } from 'lucide-react';
+import { signupWithEmail } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc } from "firebase/firestore";
 
 const signupSchema = z.object({
   displayName: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -24,9 +21,7 @@ const signupSchema = z.object({
 type SignupFormInputs = z.infer<typeof signupSchema>;
 
 export default function SignupForm() {
-
   const router = useRouter();
-
   const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<SignupFormInputs>({
     resolver: zodResolver(signupSchema),
@@ -35,20 +30,8 @@ export default function SignupForm() {
   const onSubmit: SubmitHandler<SignupFormInputs> = async (data) => {
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const user = userCredential.user;
-
-      // Set displayName
-      await updateProfile(user, { displayName: data.displayName });
-
-      // Add user details to Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        displayName: data.displayName,
-        email: data.email,
-        createdAt: new Date(),
-      });
-      router.push('/login')
+      await signupWithEmail(data.email, data.password, data.displayName);
+      router.push("/login");
     } catch (err: any) {
       alert(err.message);
     }
@@ -58,7 +41,7 @@ export default function SignupForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="displayName">Display Name</Label>
+        <Label htmlFor="displayName">Name</Label>
         <Input id="displayName" {...register("displayName")} placeholder="Your Name" aria-invalid={errors.displayName ? "true" : "false"} />
         {errors.displayName && <p className="text-sm text-destructive">{errors.displayName.message}</p>}
       </div>

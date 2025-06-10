@@ -9,12 +9,14 @@ import { ArrowRight, HeartPulse, Users, MessageCircle, BookOpen } from "lucide-r
 import Image from "next/image";
 import { User } from "firebase/auth";
 import { useState } from "react";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 export default function DashboardPage() {
 
   const [user, setUser] = useState<User | null>(null);
 
   return (
+      <AuthGuard>
       <AppShell>
         <div className="space-y-8">
           <section className="bg-card p-6 sm:p-8 rounded-xl shadow-lg">
@@ -76,6 +78,7 @@ export default function DashboardPage() {
 
         </div>
       </AppShell>
+      </AuthGuard>
   );
 }
 
